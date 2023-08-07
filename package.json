@@ -7,10 +7,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "surge": "surge D:/CS/Projects/Web/Svelte/dvroutingsim/build dvroutingsim.surge.sh",
+    "publish": "npm run build && npm run surge"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^2.0.0",
+    "@sveltejs/adapter-static": "^2.0.3",
     "@sveltejs/kit": "^1.20.4",
     "sass": "^1.64.2",
     "svelte": "^4.0.5",

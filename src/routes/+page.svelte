@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { neighbours, other } from "$lib/dv";
+    import { neighbours } from "$lib/dv";
     import type { Node, Edge } from "$lib/types";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
