@@ -1,14 +1,14 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { neighbours } from "$lib/dv";
     import type { Node, Edge } from "$lib/types";
+    import { Link, Router } from "$lib/classes";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let nodes: Node[] = [];
     let edges: Edge[] = [];
-    let selection: any;
+    let selection: Node|null;
     let createEdge = false;
-    let edgeCost: any;
+    let edgeCost: number|null;
     let fromNode: Node|null;
     let toNode: Node|null;
     const within = (x: number, y: number) => {
@@ -33,7 +33,7 @@
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.textAlign="center";
-        ctx.fillText(node.id.toString(), node.x, node.y);
+        ctx.fillText(node.router.id.toString(), node.x, node.y);
     }
     const draw = () => {
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -51,12 +51,11 @@
             ctx.lineTo(toNode.x, toNode.y);
             ctx.stroke();
             ctx.fillStyle = '#000000'
-            ctx.fillText(edges[i].cost.toString(), (toNode.x + fromNode.x)/2, (toNode.y + fromNode.y)/2)
+            ctx.fillText(edges[i].link.cost.toString(), (toNode.x + fromNode.x)/2, (toNode.y + fromNode.y)/2)
         }
     }
     const addEdge = (from: Node, to: Node, cost: number) => {
-        let nodes: Node[] = [from, to];
-        let edge: Edge = { nodes, cost };
+        let edge: Edge = { nodes: [from, to], link: new Link(cost) };
         if (!edges.find((e) => (e.nodes.includes(from) && e.nodes.includes(to)))) 
             edges = [...edges, edge];
         fromNode!.highlighted = undefined;
@@ -70,7 +69,6 @@
         ctx.fillStyle = "rgb(200, 0, 0)";
         resize();
     });
-    $: console.log(neighbours(nodes[0], edges).map((x) => `${x.dest.id}, ${x.cost}`))
 </script>
 
 {#if createEdge}
@@ -140,20 +138,20 @@
     on:mouseup={(e) => {
         if (!selection) {
             let node = {
-                id: nodes.length,
                 x: e.x,
                 y: e.y,
                 radius: 10,
                 fillStyle: '#22cccc',
                 strokeStyle: '#009999',
                 selectedFill: '#88aaaa',
-                highStroke: '#ff0000'
+                highStroke: '#ff0000',
+                router: new Router(nodes.length)
             };
             nodes = [...nodes, node];
             drawNode(node);
         }
         if (selection && !selection.selected) {
-            selection = undefined;
+            selection = null;
         }
         draw();
     }}
