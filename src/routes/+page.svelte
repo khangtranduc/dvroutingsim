@@ -1,72 +1,73 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import type { Node, Edge } from "$lib/types";
     import { Link, Router } from "$lib/classes";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
-    let nodes: Node[] = [];
-    let edges: Edge[] = [];
-    let selection: Node|null;
+    let routers: Router[] = [];
+    let links: Link[] = [];
+    let selection: Router|null;
     let createEdge = false;
+    let editEdge = false;
     let edgeCost: number|null;
-    let fromNode: Node|null;
-    let toNode: Node|null;
+    let fromNode: Router|null;
+    let toNode: Router|null;
     const within = (x: number, y: number) => {
-        return nodes.find(n => {
-            return x > (n.x - n.radius) &&
-                y > (n.y - n.radius) &&
-                x < (n.x + n.radius) &&
-                y < (n.y + n.radius);
+        return routers.find(n => {
+            return x > (n.vertex.x - n.vertex.radius) &&
+                y > (n.vertex.y - n.vertex.radius) &&
+                x < (n.vertex.x + n.vertex.radius) &&
+                y < (n.vertex.y + n.vertex.radius);
         })
     }
     const resize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    const drawNode = (node: Node) => {
+    const drawNode = (router: Router) => {
         ctx.beginPath();
-        ctx.fillStyle = node.selected ? node.selectedFill : node.fillStyle;
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2, true);
-        ctx.strokeStyle = node.highlighted ? node.highStroke : node.strokeStyle;
-        ctx.lineWidth = node.highlighted ? 3 : 1;
+        ctx.fillStyle = router.vertex.selected ? router.vertex.selectedFill : router.vertex.fillStyle;
+        ctx.arc(router.vertex.x, router.vertex.y, router.vertex.radius, 0, Math.PI * 2, true);
+        ctx.strokeStyle = router.vertex.highlighted ? router.vertex.highStroke : router.vertex.strokeStyle;
+        ctx.lineWidth = router.vertex.highlighted ? 3 : 1;
         ctx.stroke();
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.textAlign="center";
-        ctx.fillText(node.router.id.toString(), node.x, node.y);
+        ctx.fillText(`${router.id}`, router.vertex.x, router.vertex.y);
     }
     const draw = () => {
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         //Draw Nodes
-        for (let i = 0; i < nodes.length; i++)
-            drawNode(nodes[i]);
+        for (let i = 0; i < routers.length; i++)
+            drawNode(routers[i]);
         //Draw Edges
-        for (let i = 0; i < edges.length; i++) {
-            let fromNode = edges[i].nodes[0];
-            let toNode = edges[i].nodes[1];
+        for (let i = 0; i < links.length; i++) {
+            let fromNode = links[i].routers[0];
+            let toNode = links[i].routers[1];
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.strokeStyle = fromNode.strokeStyle;
-            ctx.moveTo(fromNode.x, fromNode.y);
-            ctx.lineTo(toNode.x, toNode.y);
+            ctx.strokeStyle = fromNode.vertex.strokeStyle;
+            ctx.moveTo(fromNode.vertex.x, fromNode.vertex.y);
+            ctx.lineTo(toNode.vertex.x, toNode.vertex.y);
             ctx.stroke();
             ctx.fillStyle = '#000000'
-            ctx.fillText(edges[i].link.cost.toString(), (toNode.x + fromNode.x)/2, (toNode.y + fromNode.y)/2)
+            ctx.fillText(links[i].cost.toString(), (toNode.vertex.x + fromNode.vertex.x)/2, (toNode.vertex.y + fromNode.vertex.y)/2)
         }
     }
-    const addEdge = (from: Node, to: Node, cost: number) => {
-        let edge: Edge = { nodes: [from, to], link: new Link(cost) };
-        if (!edges.find((e) => (e.nodes.includes(from) && e.nodes.includes(to)))) 
-            edges = [...edges, edge];
-        fromNode!.highlighted = undefined;
+    const addEdge = (from: Router, to: Router, cost: number) => {
+        let link = new Link(from, to, cost);
+        if (!links.find((e) => (e.routers.includes(from) && e.routers.includes(to)))) 
+            links = [...links, link];
+        fromNode!.vertex.highlighted = false;
+        fromNode?.discover(links);
+        toNode?.discover(links);
         fromNode = null;
         toNode = null;
+        console.log(routers[0].distVec);
         draw();
     }
     onMount(() => {
-        let tmp = canvas.getContext("2d");
-        if (tmp != null) ctx = tmp;
-        ctx.fillStyle = "rgb(200, 0, 0)";
+        ctx = canvas.getContext("2d")!;
         resize();
     });
 </script>
@@ -100,62 +101,58 @@
 <canvas bind:this={canvas}
     on:mousedown={(e) => {
         let target = within(e.x, e.y);
-        if (selection && selection.selected){
-            selection.selected = false;
+        if (selection && selection.vertex.selected){
+            selection.vertex.selected = false;
         }
         if (target) {
             if (e.button == 1 && !fromNode) {
                 fromNode = target;
-                fromNode.highlighted = true;
+                fromNode.vertex.highlighted = true;
             }
             else if (e.button == 1 && fromNode) {
                 if (fromNode != target){
                     toNode = target;
-                    if (!edges.find((e) => fromNode && 
+                    if (!links.find((e) => fromNode && 
                         toNode && 
-                        e.nodes.includes(fromNode) && 
-                        e.nodes.includes(toNode))){
+                        e.routers.includes(fromNode) && 
+                        e.routers.includes(toNode))){
                         createEdge = true;
+                    }
+                    else {
+                        editEdge = true;
                     }
                 }
                 else {
-                    fromNode.highlighted = false;
+                    fromNode.vertex.highlighted = false;
                     fromNode = null;
                 }
             }
             selection = target;
-            selection.selected = true;
+            selection.vertex.selected = true;
             draw();
         };
     }}
     on:mousemove={(e) => {
         if (selection && e.buttons){
-            selection.x = e.x;
-            selection.y = e.y;
+            selection.vertex.x = e.x;
+            selection.vertex.y = e.y;
             draw();
         }
     }}
     on:mouseup={(e) => {
         if (!selection) {
-            let node = {
-                x: e.x,
-                y: e.y,
-                radius: 10,
-                fillStyle: '#22cccc',
-                strokeStyle: '#009999',
-                selectedFill: '#88aaaa',
-                highStroke: '#ff0000',
-                router: new Router(nodes.length)
-            };
-            nodes = [...nodes, node];
-            drawNode(node);
+            let router = new Router(routers.length, e.x, e.y)
+            routers = [...routers, router];
+            drawNode(router);
         }
-        if (selection && !selection.selected) {
+        if (selection && !selection.vertex.selected) {
             selection = null;
         }
         draw();
     }}
 />
+
+<a role="button" href={"#"}>Cum</a>
 
 <style lang="scss">
     header {
