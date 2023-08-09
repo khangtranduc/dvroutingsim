@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Link, Router } from "$lib/classes";
+    import Layout from "./+layout.svelte";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
@@ -96,39 +97,54 @@
 </dialog>
 {/if}
 
-<svelte:window on:resize={resize}/>
+<svelte:window 
+    on:resize={resize}
+    />
 
 <canvas bind:this={canvas}
+    on:contextmenu={(e) => {
+        let target = within(e.x, e.y);
+        if (target) {
+            e.preventDefault();
+            console.log(`show dv of ${target.id}`);
+        }
+    }}
     on:mousedown={(e) => {
         let target = within(e.x, e.y);
         if (selection && selection.vertex.selected){
             selection.vertex.selected = false;
         }
         if (target) {
-            if (e.button == 1 && !fromNode) {
-                fromNode = target;
-                fromNode.vertex.highlighted = true;
-            }
-            else if (e.button == 1 && fromNode) {
-                if (fromNode != target){
-                    toNode = target;
-                    if (!links.find((e) => fromNode && 
-                        toNode && 
-                        e.routers.includes(fromNode) && 
-                        e.routers.includes(toNode))){
-                        createEdge = true;
+            switch(e.button){
+                case 0:
+                    selection = target;
+                    selection.vertex.selected = true;
+                    break;
+                case 1:
+                    if (e.button == 1 && !fromNode) {
+                        fromNode = target;
+                        fromNode.vertex.highlighted = true;
                     }
-                    else {
-                        editEdge = true;
+                    else if (e.button == 1 && fromNode) {
+                        if (fromNode != target){
+                            toNode = target;
+                            if (!links.find((e) => fromNode && 
+                                toNode && 
+                                e.routers.includes(fromNode) && 
+                                e.routers.includes(toNode))){
+                                createEdge = true;
+                            }
+                            else {
+                                editEdge = true;
+                            }
+                        }
+                        else {
+                            fromNode.vertex.highlighted = false;
+                            fromNode = null;
+                        }
                     }
-                }
-                else {
-                    fromNode.vertex.highlighted = false;
-                    fromNode = null;
-                }
+                    break;
             }
-            selection = target;
-            selection.vertex.selected = true;
             draw();
         };
     }}
@@ -140,10 +156,13 @@
         }
     }}
     on:mouseup={(e) => {
-        if (!selection) {
-            let router = new Router(routers.length, e.x, e.y)
-            routers = [...routers, router];
-            drawNode(router);
+        switch(e.button){
+            case 0:
+                if (!selection) {
+                    let router = new Router(routers.length, e.x, e.y)
+                    routers = [...routers, router];
+                }
+                break;
         }
         if (selection && !selection.vertex.selected) {
             selection = null;
@@ -160,5 +179,10 @@
     }
     article {
         padding-bottom: 1rem;
+    }
+    a {
+        position: absolute;
+        left: 0.1rem;
+        top: 0.1rem;
     }
 </style>
