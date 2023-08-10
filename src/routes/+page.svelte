@@ -1,17 +1,17 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Link, Router } from "$lib/classes";
-    import Layout from "./+layout.svelte";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
     let links: Link[] = [];
     let selection: Router|null;
     let createEdge = false;
-    let editEdge = false;
+    let editEdge = false; //TODO: add edge editing
     let edgeCost: number|null;
     let fromNode: Router|null;
     let toNode: Router|null;
+    let inspect: Router|null;
     const within = (x: number, y: number) => {
         return routers.find(n => {
             return x > (n.vertex.x - n.vertex.radius) &&
@@ -23,6 +23,7 @@
     const resize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        draw();
     }
     const drawNode = (router: Router) => {
         ctx.beginPath();
@@ -67,6 +68,20 @@
         console.log(routers[0].distVec);
         draw();
     }
+    const back = () => {
+
+    }
+    const forward = () => {
+
+    }
+    const clear = () => {
+        routers = [];
+        links = [];
+        draw();
+    }
+    const reset = () => {
+
+    }
     onMount(() => {
         ctx = canvas.getContext("2d")!;
         resize();
@@ -97,16 +112,31 @@
 </dialog>
 {/if}
 
-<svelte:window 
-    on:resize={resize}
-    />
+{#if inspect}
+<table style="top: {inspect.vertex.y}px; left: {inspect.vertex.x}px">
+    <tr>
+        <td>dest</td>
+        <td>next</td>
+        <td>cost</td>
+    </tr>
+    {#each inspect.distVec as v, i}
+        <tr>
+            <td>{i}</td>
+            <td>{v?.next ?? "–"}</td>
+            <td>{v?.cost ?? "∞"}</td>
+        </tr>
+    {/each}
+</table>
+{/if}
+
+<svelte:window on:resize={resize}/>
 
 <canvas bind:this={canvas}
     on:contextmenu={(e) => {
         let target = within(e.x, e.y);
         if (target) {
             e.preventDefault();
-            console.log(`show dv of ${target.id}`);
+            inspect = target;
         }
     }}
     on:mousedown={(e) => {
@@ -149,6 +179,7 @@
         };
     }}
     on:mousemove={(e) => {
+        inspect = null;
         if (selection && e.buttons){
             selection.vertex.x = e.x;
             selection.vertex.y = e.y;
@@ -171,18 +202,35 @@
     }}
 />
 
-<a role="button" href={"#"}>Cum</a>
+<buttongroup>
+    <button on:click={back}><iconify-icon icon="lucide:step-back"/></button>
+    <button on:click={reset}>Reset</button>
+    <button on:click={clear}>Clear</button>
+    <button on:click={forward}><iconify-icon icon="lucide:step-forward"/></button>
+</buttongroup>
 
 <style lang="scss">
+    buttongroup {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        position: absolute;
+        gap: .2rem;
+        bottom: .1rem;
+    }
+    button {
+        margin: 0;
+    }
     header {
         margin-bottom: 1rem;
     }
     article {
         padding-bottom: 1rem;
     }
-    a {
+    table {
         position: absolute;
-        left: 0.1rem;
-        top: 0.1rem;
+        width: fit-content;
+        border: solid 2px;
+        margin: 0;
     }
 </style>
