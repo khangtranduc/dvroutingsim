@@ -31,7 +31,7 @@ export class DistanceElement {
     }
 
     toString(): string {
-        return `${this.dest} | ${this.next} | ${this.cost}`
+        return `${this.dest.id} | ${this.next.id} | ${this.cost}`
     }
 }
 
@@ -71,24 +71,29 @@ export class Router {
                 this.distVec[x.dest.id] = x;
         })
     }
-    send(links: Link[]){
-        Router.neighbours(this, links).forEach((x) => {x.dest.dvQ[this.id] = this.distVec; console.log(x.dest.dvQ)});
+    reset(links: Link[]) {
+        Router.neighbours(this, links).forEach((x) => this.distVec[x.dest.id] = x)
     }
-    process(routers: Router[]){
+    send(links: Link[]){
+        Router.neighbours(this, links).forEach((x) => x.dest.dvQ[this.id] = this.distVec);
+    }
+    process(){
         for (let i = 0; i < this.dvQ.length; i++){
             if (!this.dvQ[i]) continue;
-            this.dvQ[i].forEach((x, i) => {
-                this.distVec[i] = Router.min(this.distVec[i], x, routers[i]);
+            this.dvQ[i].forEach((x, k) => {
+                if (this.id == 0) console.log(`${i} ${x}`);
+                this.distVec[k] = Router.min(this.distVec[k], x, this.distVec[i]);
             });
         }
         this.dvQ = [];
     }
-    static min(D: DistanceElement, c: DistanceElement, neighbour: Router): DistanceElement{
+    static min(D: DistanceElement, c: DistanceElement, d: DistanceElement): DistanceElement{
         if (!c) return D;
         let temp = c.clone();
-        temp.next = neighbour;
+        temp.next = d.dest;
+        temp.cost = c.cost + d.cost;
         if (!D) return temp;
-        return D.cost <= c.cost ? D : temp;
+        return D.cost <= temp.cost ? D : temp;
     }
     static neighbours(s: Router, links: Link[]): DistanceElement[] {
         return links

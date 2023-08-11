@@ -72,7 +72,7 @@
     }
     const forward = () => {
         routers.forEach((x) => x.send(links));
-        routers.forEach((x) => x.process(routers));
+        routers.forEach((x) => x.process());
     }
     const clear = () => {
         routers = [];
@@ -80,13 +80,12 @@
         draw();
     }
     const reset = () => {
-
+        routers.forEach((x) => x.reset(links));
     }
     onMount(() => {
         ctx = canvas.getContext("2d")!;
         resize();
     });
-    $: console.log(routers[0]?.dvQ);
 </script>
 
 {#if createEdge}
