@@ -65,14 +65,14 @@
         toNode?.discover(links);
         fromNode = null;
         toNode = null;
-        console.log(routers[0].distVec);
         draw();
     }
     const back = () => {
 
     }
     const forward = () => {
-
+        routers.forEach((x) => x.send(links));
+        routers.forEach((x) => x.process(routers));
     }
     const clear = () => {
         routers = [];
@@ -86,6 +86,7 @@
         ctx = canvas.getContext("2d")!;
         resize();
     });
+    $: console.log(routers[0]?.dvQ);
 </script>
 
 {#if createEdge}
@@ -122,7 +123,7 @@
     {#each inspect.distVec as v, i}
         <tr>
             <td>{i}</td>
-            <td>{v?.next ?? "–"}</td>
+            <td>{v?.next.id ?? "–"}</td>
             <td>{v?.cost ?? "∞"}</td>
         </tr>
     {/each}
