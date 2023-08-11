@@ -203,7 +203,7 @@
 />
 
 <buttongroup>
-    <button on:click={back}><iconify-icon icon="lucide:step-back"/></button>
+    <!-- <button on:click={back}><iconify-icon icon="lucide:step-back"/></button> -->
     <button on:click={reset}>Reset</button>
     <button on:click={clear}>Clear</button>
     <button on:click={forward}><iconify-icon icon="lucide:step-forward"/></button>
