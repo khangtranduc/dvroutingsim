@@ -1,3 +1,15 @@
+export class Network {
+    name: string;
+    routers: Router[];
+    links: Link[];
+
+    constructor(name: string, routers: Router[], links: Link[]){
+        this.name = name;
+        this.routers = routers;
+        this.links = links;
+    }
+}
+
 export class DistanceElement {
     dest: Router;
     next: Router;

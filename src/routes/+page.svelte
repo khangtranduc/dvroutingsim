@@ -1,17 +1,21 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Link, Router } from "$lib/classes";
+    import { Link, Network, Router } from "$lib/classes";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
     let links: Link[] = [];
+    let selectedNetwork: Network;
+    let savedNetworks: Network[] = [new Network("New Network", [], [])];
     let selection: Router|null;
     let createEdge = false;
     let editEdge = false; //TODO: add edge editing
+    let saving = false;
     let edgeCost: number|null;
     let fromNode: Router|null;
     let toNode: Router|null;
     let inspect: Router|null;
+    let networkName: string;
     const within = (x: number, y: number) => {
         return routers.find(n => {
             return x > (n.vertex.x - n.vertex.radius) &&
@@ -70,6 +74,17 @@
     const back = () => {
 
     }
+    const save = () => {
+        let network = new Network(networkName, routers, links)
+        savedNetworks = [...savedNetworks, network];
+        selectedNetwork = network;
+        saving = false;
+    }
+    const load = () => {
+        routers = selectedNetwork.routers ?? [];
+        links = selectedNetwork.links ?? [];
+        draw();
+    }
     const forward = () => {
         routers.forEach((x) => x.send(links));
         routers.forEach((x) => x.process());
@@ -77,6 +92,7 @@
     const clear = () => {
         routers = [];
         links = [];
+        selectedNetwork = savedNetworks[0];
         draw();
     }
     const reset = () => {
@@ -84,9 +100,29 @@
     }
     onMount(() => {
         ctx = canvas.getContext("2d")!;
+        selectedNetwork = savedNetworks[0];
         resize();
     });
+    $: selectedNetwork && load();
 </script>
+
+{#if saving}
+<dialog open>
+    <article>
+        <header>
+            <a class="close" href={'#'} on:click={() => {saving = false}}> </a>
+            Save Network
+        </header>
+        <label>
+            Network name
+            <input placeholder="Enter network name" bind:value={networkName} required/>
+        </label>
+        <button on:click={save}>
+            Save Graph
+        </button>
+    </article>
+</dialog>
+{/if}
 
 {#if createEdge}
 <dialog open>
@@ -202,14 +238,29 @@
     }}
 />
 
+<div>
+    <select bind:value={selectedNetwork}>
+        {#each savedNetworks as network}
+            <option value={network}>{network.name}</option>
+        {/each}
+    </select>
+</div>
+
 <buttongroup>
     <!-- <button on:click={back}><iconify-icon icon="lucide:step-back"/></button> -->
+    <button on:click={() => saving = true}><iconify-icon icon="lucide:save"/></button>
     <button on:click={reset}>Reset</button>
     <button on:click={clear}>Clear</button>
     <button on:click={forward}><iconify-icon icon="lucide:step-forward"/></button>
 </buttongroup>
 
 <style lang="scss">
+    div {
+        position: absolute;
+        top: .1rem;
+        right: .3rem;
+        left: .3rem;
+    }
     buttongroup {
         width: 100%;
         display: flex;
