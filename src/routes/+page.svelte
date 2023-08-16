@@ -74,6 +74,9 @@
     const back = () => {
 
     }
+    const fforward = () => {
+
+    }
     const save = () => {
         let network = new Network(networkName, routers, links)
         savedNetworks = [...savedNetworks, network];
@@ -248,10 +251,26 @@
 
 <buttongroup>
     <!-- <button on:click={back}><iconify-icon icon="lucide:step-back"/></button> -->
-    <button on:click={() => saving = true}><iconify-icon icon="lucide:save"/></button>
-    <button on:click={reset}>Reset</button>
-    <button on:click={clear}>Clear</button>
-    <button on:click={forward}><iconify-icon icon="lucide:step-forward"/></button>
+    <button on:click={() => saving = true}>
+        <iconify-icon icon="lucide:save"/>
+        Save
+    </button>
+    <button on:click={reset}>
+        <iconify-icon icon="lucide:list-restart"/>
+        Reset
+    </button>
+    <button on:click={clear}>
+        <iconify-icon icon="lucide:circle-slash-2"/>
+        Clear
+    </button>
+    <button on:click={forward}>
+        <iconify-icon icon="lucide:step-forward"/>
+        Step Forward
+    </button>
+    <button on:click={fforward}>
+        <iconify-icon icon="lucide:fast-forward"/>
+        Fast Forward
+    </button>
 </buttongroup>
 
 <style lang="scss">
@@ -262,14 +281,19 @@
         left: .3rem;
     }
     buttongroup {
-        width: 100%;
         display: flex;
         justify-content: center;
         position: absolute;
         gap: .2rem;
         bottom: .1rem;
+        left: .3rem;
+        right: .3rem;
     }
     button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .3rem;
         margin: 0;
     }
     header {
