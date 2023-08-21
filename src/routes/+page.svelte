@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { DistanceElement, Link, Network, Router } from "$lib/classes";
+    import Layout from "./+layout.svelte";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
@@ -219,7 +220,13 @@
 <dialog open>
     <article>
         <header>
-            <a class="close" href={'#'} on:click={() => {createEdge = false}}> </a>
+            <a class="close" href={'#'} on:click={() => {
+                createEdge = false; 
+                console.log(fromNode);
+                if (fromNode) fromNode.vertex.highlighted = false;
+                fromNode = null;
+                draw();
+                }}> </a>
             {#if editEdge}Edit{:else}Create{/if} Edge
         </header>
         <label>
@@ -307,7 +314,15 @@
                     break;
             }
             draw();
-        };
+        }
+        else {
+            switch(e.button){
+                case 1:
+                    if (fromNode) fromNode.vertex.highlighted = false;
+                    fromNode = null;
+                    break;
+            }
+        }
     }}
     on:mousemove={(e) => {
         inspect = null;
