@@ -17,13 +17,14 @@ export class DistanceElement {
 
     constructor(de: DistanceElement);
     constructor(dest: Router, cost: number);
-    constructor(dest: Router, cost: Router, next: number);
+    constructor(dest: Router, next: Router, cost: number);
     constructor(...args: any[]){
         switch(args.length){
             case 1:
                 this.dest = args[0].dest;
                 this.next = args[0].next;
                 this.cost = args[0].cost;
+                break;
             case 2:
                 this.dest = this.next = args[0];
                 this.cost = args[1];
@@ -42,8 +43,23 @@ export class DistanceElement {
         return new DistanceElement(this);
     }
 
+    compare(other: DistanceElement): boolean {
+        if (!other) return false;
+        return this.dest == other.dest && 
+            this.next == other.next &&
+            this.cost == other.cost
+    }
+
+    pojo() {
+        return {
+            dest: this.dest.id,
+            next: this.next.id,
+            cost: this.cost
+        }
+    }
+
     toString(): string {
-        return `${this.dest.id} | ${this.next.id} | ${this.cost}`
+        return `[${this.dest.id} | ${this.next.id} | ${this.cost}]`
     }
 }
 
@@ -69,51 +85,100 @@ export class Router {
     distVec: DistanceElement[] = [];
     vertex: Vertex;
     dvQ: DistanceElement[][] = [];
+    C: DistanceElement[] = [];
 
     constructor(id: number, x:number, y:number){
         this.id = id;
         this.distVec[id] = new DistanceElement(this, this, 0);
+        this.C[id] = this.distVec[id];
+        this.dvQ[id] = this.distVec;
         this.vertex = new Vertex(x, y);
+    }
+    reset() {
+        this.distVec = [];
+        this.distVec[this.id] = new DistanceElement(this, this, 0);
+        this.C[this.id] = this.distVec[this.id];
+        this.dvQ = [];
+        this.dvQ[this.id] = this.distVec;
     }
     discover(links: Link[]) {
         Router.neighbours(this, links).forEach((x) => {
-            if (this.distVec[x.dest.id] && this.distVec[x.dest.id].dest != this.distVec[x.dest.id].next)
-                this.distVec[x.dest.id] = this.distVec[x.dest.id].cost < x.cost ? this.distVec[x.dest.id] : x;
-            else
-                this.distVec[x.dest.id] = x;
+            // console.log(`${x} ${this.C[x.dest.id]}`);
+            // console.log(!x.compare(this.C[x.dest.id]));
+            let flag = false;
+            if (!x.compare(this.C[x.dest.id])) flag = true;
+            this.C[x.dest.id] = x;
+            if (flag) {
+                delete this.distVec[x.dest.id];
+                delete this.dvQ[x.dest.id];
+            }
         })
     }
-    reset(links: Link[]) {
-        Router.neighbours(this, links).forEach((x) => this.distVec[x.dest.id] = x)
-    }
     send(links: Link[]){
-        Router.neighbours(this, links).forEach((x) => x.dest.dvQ[this.id] = this.distVec);
+        // this.discover(links);
+        Router.neighbours(this, links).forEach((x) => {
+            // let flag = false;
+            // if (Router.distVecDiff(x.dest.dvQ[this.id], this.distVec)){
+            //     x.dest.discover(links);
+            //     flag = true;
+            // }
+            x.dest.discover(links);
+            x.dest.dvQ[this.id] = [];
+            for (let i = 0; i < this.distVec.length; i++)
+                if (this.distVec[i])
+                    x.dest.dvQ[this.id][i] = this.distVec[i].clone();
+            x.dest.recalc(this.id);
+            // if (flag) {
+            //     x.dest.recalc(this.id);
+            // }
+        });
     }
-    process(){
-        for (let i = 0; i < this.dvQ.length; i++){
-            if (!this.dvQ[i]) continue;
-            this.dvQ[i].forEach((x, k) => {
-                if (this.id == 0) console.log(`${i} ${x}`);
-                this.distVec[k] = Router.min(this.distVec[k], x, this.distVec[i]);
-            });
+    pojo() {
+        return {
+            id: this.id,
+            vertex: this.vertex
         }
-        this.dvQ = [];
     }
-    static min(D: DistanceElement, c: DistanceElement, d: DistanceElement): DistanceElement{
-        if (!c) return D;
-        let temp = c.clone();
-        temp.next = d.dest;
-        temp.cost = c.cost + d.cost;
-        if (!D) return temp;
-        return D.cost <= temp.cost ? D : temp;
+    recalc(from: number){
+        let N = Math.max(this.C.length, this.distVec.length, this.dvQ[from].length)
+        // console.log(`${this.id} ${from} ${N}`);
+        // console.log(this.dvQ);
+        for (let i = 0; i < N; i++)
+            this.distVec[i] = Router.min(this.distVec[i], this.C[from], this.dvQ[from][i])
+    }
+    static dvPojo(dv: DistanceElement[]){
+        return dv.map(x => x.pojo());
+    }
+    static min(Dxy: DistanceElement, Cxv: DistanceElement, Dvy: DistanceElement): DistanceElement{
+        if (!Dvy) return Dxy;
+        let alt = new DistanceElement(Dvy.dest, Cxv.dest, Cxv.cost + Dvy.cost);
+        if (!Dxy || Dxy.next == Cxv.dest) return alt;
+        return alt.cost < Dxy.cost ? alt : Dxy;
+    }
+    static distVecDiff(dv1: DistanceElement[], dv2: DistanceElement[]): boolean {
+        if (!dv1 || !dv2) return true;
+        if (dv1.length != dv2.length) return true;
+        for (let i = 0; i < dv1.length; i++){
+            if (dv1[i] && dv2[i] && !dv1[i].compare(dv2[i])) return true;
+        }
+        return false;
     }
     static neighbours(s: Router, links: Link[]): DistanceElement[] {
         return links
                 .filter((link) => link.routers.includes(s))
                 .map((link) => { return new DistanceElement(Router.other(s, link.routers), link.cost) });
     }
-    static other(s: Router, routers: Router[]){
+    static other(s: Router, routers: Router[]): Router{
         return routers[0] == s? routers[1] : routers[0];
+    }
+    static diff(dv1: DistanceElement[], dv2: DistanceElement[]){
+        for (let i = 0; i < dv1.length; i++){
+            if (dv1[i].dest != dv2[i].dest ||
+                dv1[i].next != dv2[i].next ||
+                dv1[i].cost != dv2[i].cost)
+                return true;
+        }
+        return false;
     }
 }
 
@@ -123,5 +188,11 @@ export class Link {
     constructor(u: Router, v: Router, cost: number){
         this.cost = cost;
         this.routers = [u, v];
+    }
+    pojo() {
+        return {
+            routers: this.routers.map(x => x.pojo()),
+            cost: this.cost
+        }
     }
 }

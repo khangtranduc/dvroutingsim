@@ -16,6 +16,14 @@
     let toNode: Router|null;
     let inspect: Router|null;
     let networkName: string;
+    let files: FileList;
+    let input: HTMLInputElement;
+    let nForward = 0;
+    let routerJSON: Router[]|null;
+    let linkJSON: Link[]|null;
+    let nf: number|null;
+    let select: HTMLSelectElement;
+    export let data;
     const within = (x: number, y: number) => {
         return routers.find(n => {
             return x > (n.vertex.x - n.vertex.radius) &&
@@ -65,17 +73,41 @@
         if (!links.find((e) => (e.routers.includes(from) && e.routers.includes(to)))) 
             links = [...links, link];
         fromNode!.vertex.highlighted = false;
-        fromNode?.discover(links);
-        toNode?.discover(links);
+        // fromNode?.discover(links);
+        // toNode?.discover(links);
         fromNode = null;
         toNode = null;
         draw();
     }
-    const back = () => {
-
+    const changeEdge = (from: Router, to: Router, cost: number) => {
+        let link = links.find(e => e.routers.includes(from) && e.routers.includes(to))
+        link!.cost = cost;
+        fromNode!.vertex.highlighted = false;
+        // fromNode?.discover(links);
+        // toNode?.discover(links);
+        fromNode = null;
+        toNode = null;
+        editEdge = false;
+        draw();
     }
     const fforward = () => {
-
+        reset();
+        forward(); //Discovery step;
+        routers.forEach(x => {
+            for (let i = 0; i < routers.length - 1; i++){
+                links.forEach(l => {
+                    for (let j = 0; j < 2; j++){
+                        let u = l.routers[j^0];
+                        let v = l.routers[j^1];
+                        if (x.distVec[u.id] && x.distVec[u.id].cost + l.cost < x.distVec[v.id].cost){
+                            x.distVec[v.id].next = u;
+                            x.distVec[v.id].cost = x.distVec[u.id].cost + l.cost;
+                        }
+                    }
+                })
+            }
+        });
+        nForward = -1;
     }
     const save = () => {
         let network = new Network(networkName, routers, links)
@@ -89,8 +121,28 @@
         draw();
     }
     const forward = () => {
+        // console.log("sending...");
         routers.forEach((x) => x.send(links));
-        routers.forEach((x) => x.process());
+        nForward += 1;
+        // routers.forEach((x) => console.log(x.distVec));
+    }
+    const download = () => {
+        downloadJSON([routers.map(x => x.pojo()), 
+                links.map(x => x.pojo()),
+                nForward], 
+                `${selectedNetwork.name ?? "Untitled Network"}.json`);
+    }
+    const downloadJSON = (pojo: Object, name: string) => {
+        let json = JSON.stringify(pojo);
+        let blob = new Blob([json], { type: "text/plain;charset=utf-8"});
+        let url = window.URL || window.webkitURL;
+        let link = url.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.download = name;
+        a.href = link;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
     const clear = () => {
         routers = [];
@@ -99,15 +151,49 @@
         draw();
     }
     const reset = () => {
-        routers.forEach((x) => x.reset(links));
+        routers.forEach((x) => x.reset());
+    }
+    const loadNetwork = (routerJSON: Router[]|null, linkJSON: Link[]|null, nForward: number, networkName: string) => {
+        clear();
+        routerJSON!.forEach(x => {
+            routers = [...routers, new Router(x.id, x.vertex.x, x.vertex.y)]
+        })
+        linkJSON!.forEach(x => {
+            links = [...links, new Link(routers[x.routers[0].id], routers[x.routers[1].id], x.cost)]
+        })
+        selectedNetwork = new Network(networkName, routers, links);
+        savedNetworks = [...savedNetworks, selectedNetwork];
+        if (nForward == -1) fforward();
+        else for (let i = 0; i < nForward; i++) forward();
+        linkJSON = null;
+        routerJSON = null;
+        nf = null;
+        draw();
+    }
+    const loadJSON = () => {
+        const reader = new FileReader();
+        reader.readAsText(files[0]);
+        networkName = files[0].name.split('.')[0];
+        reader.onload = e => {
+            [routerJSON, linkJSON, nf] = JSON.parse(<string> e.target?.result);
+        }
     }
     onMount(() => {
         ctx = canvas.getContext("2d")!;
         selectedNetwork = savedNetworks[0];
         resize();
+        Object.values(data).forEach(example => {
+            let [networkName, [routerJSON, linkJSON, nf]] = example;
+            loadNetwork(routerJSON, linkJSON, nf, networkName);
+        });
+        selectedNetwork = savedNetworks[0];
     });
     $: selectedNetwork && load();
+    $: files && loadJSON();
+    $: routerJSON && linkJSON && nf && networkName && loadNetwork(routerJSON, linkJSON, nf, networkName);
 </script>
+
+<input style="display:none" type="file" accept=".json" bind:files bind:this={input}/>
 
 {#if saving}
 <dialog open>
@@ -132,7 +218,7 @@
     <article>
         <header>
             <a class="close" href={'#'} on:click={() => {createEdge = false}}> </a>
-            Create Edge
+            {#if editEdge}Edit{:else}Create{/if} Edge
         </header>
         <label>
             Edge cost
@@ -141,11 +227,15 @@
         <button on:click={() => {
             if (edgeCost 
                 && fromNode
-                && toNode) addEdge(fromNode, toNode, edgeCost);
+                && toNode) {
+                    if (edgeCost < 0) edgeCost = 1;
+                    if (editEdge) changeEdge(fromNode, toNode, edgeCost)
+                    else addEdge(fromNode, toNode, edgeCost)
+                }
             createEdge = false;
             edgeCost = null;
         }}>
-            Add Edge
+            {#if editEdge}Edit{:else}Add{/if} Edge
         </button>
     </article>
 </dialog>
@@ -160,7 +250,7 @@
     </tr>
     {#each inspect.distVec as v, i}
         <tr>
-            <td>{i}</td>
+            <td>{v?.dest.id ?? i}</td>
             <td>{v?.next.id ?? "–"}</td>
             <td>{v?.cost ?? "∞"}</td>
         </tr>
@@ -201,11 +291,11 @@
                                 toNode && 
                                 e.routers.includes(fromNode) && 
                                 e.routers.includes(toNode))){
-                                createEdge = true;
-                            }
+                                }
                             else {
                                 editEdge = true;
                             }
+                            createEdge = true;
                         }
                         else {
                             fromNode.vertex.highlighted = false;
@@ -242,15 +332,25 @@
 />
 
 <div>
-    <select bind:value={selectedNetwork}>
+    <select bind:value={selectedNetwork} bind:this={select}>
         {#each savedNetworks as network}
-            <option value={network}>{network.name}</option>
+            <option value={network}>
+                {network.name}
+            </option>
         {/each}
     </select>
 </div>
 
 <buttongroup>
     <!-- <button on:click={back}><iconify-icon icon="lucide:step-back"/></button> -->
+    <button on:click={() => { input.click() }}>
+        <iconify-icon icon="lucide:upload"/>
+        Upload
+    </button>
+    <button on:click={download}>
+        <iconify-icon icon="lucide:download"/>
+        Download
+    </button>
     <button on:click={() => saving = true}>
         <iconify-icon icon="lucide:save"/>
         Save
@@ -265,11 +365,11 @@
     </button>
     <button on:click={forward}>
         <iconify-icon icon="lucide:step-forward"/>
-        Step Forward
+        Forward
     </button>
     <button on:click={fforward}>
         <iconify-icon icon="lucide:fast-forward"/>
-        Fast Forward
+        FForward
     </button>
 </buttongroup>
 
