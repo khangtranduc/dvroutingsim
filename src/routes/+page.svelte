@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Link, Network, Router } from "$lib/classes";
+    import { DistanceElement, Link, Network, Router } from "$lib/classes";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
@@ -99,9 +99,12 @@
                     for (let j = 0; j < 2; j++){
                         let u = l.routers[j^0];
                         let v = l.routers[j^1];
-                        if (x.distVec[u.id] && x.distVec[u.id].cost + l.cost < x.distVec[v.id].cost){
+                        if (x.distVec[u.id] && x.distVec[v.id] && (x.distVec[u.id].cost + l.cost < x.distVec[v.id].cost)){
                             x.distVec[v.id].next = u;
                             x.distVec[v.id].cost = x.distVec[u.id].cost + l.cost;
+                        }
+                        else if (x.distVec[u.id] && !x.distVec[v.id]){
+                            x.distVec[v.id] = new DistanceElement(v, u, x.distVec[u.id].cost + l.cost);
                         }
                     }
                 })
@@ -180,13 +183,12 @@
     }
     onMount(() => {
         ctx = canvas.getContext("2d")!;
-        selectedNetwork = savedNetworks[0];
         resize();
         Object.values(data).forEach(example => {
             let [networkName, [routerJSON, linkJSON, nf]] = example;
             loadNetwork(routerJSON, linkJSON, nf, networkName);
         });
-        selectedNetwork = savedNetworks[0];
+        clear();
     });
     $: selectedNetwork && load();
     $: files && loadJSON();
