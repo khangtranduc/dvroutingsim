@@ -51,9 +51,6 @@
     }
     const draw = () => {
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        //Draw Nodes
-        for (let i = 0; i < routers.length; i++)
-            drawNode(routers[i]);
         //Draw Edges
         for (let i = 0; i < links.length; i++) {
             let fromNode = links[i].routers[0];
@@ -66,6 +63,9 @@
             ctx.stroke();
             ctx.fillStyle = '#000000'
             ctx.fillText(links[i].cost.toString(), (toNode.vertex.x + fromNode.vertex.x)/2, (toNode.vertex.y + fromNode.vertex.y)/2)
+        //Draw Nodes
+        for (let i = 0; i < routers.length; i++)
+            drawNode(routers[i]);
         }
     }
     const addEdge = (from: Router, to: Router, cost: number) => {
