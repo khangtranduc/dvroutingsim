@@ -9,7 +9,7 @@
     let savedNetworks: Network[] = [new Network("New Network", [], [])];
     let selection: Router|null;
     let createEdge = false;
-    let editEdge = false; //TODO: add edge editing
+    let editEdge = false;
     let saving = false;
     let edgeCost: number|null;
     let fromNode: Router|null;
@@ -19,11 +19,14 @@
     let files: FileList;
     let input: HTMLInputElement;
     let nForward = 0;
+    let routerIcon: HTMLImageElement;
     let routerJSON: Router[]|null;
     let linkJSON: Link[]|null;
     let nf: number|null;
     let wx: number;
     let wy: number;
+    let modalDV = false;
+    let modalRouter: Router;
     export let data;
     const within = (x: number, y: number) => {
         return routers.find(n => {
@@ -42,12 +45,13 @@
     }
     const drawNode = (router: Router) => {
         ctx.beginPath();
-        ctx.fillStyle = router.vertex.selected ? router.vertex.selectedFill : router.vertex.fillStyle;
-        ctx.arc(router.getX(wx), router.getY(wy), router.vertex.radius, 0, Math.PI * 2, true);
-        ctx.strokeStyle = router.vertex.highlighted ? router.vertex.highStroke : router.vertex.strokeStyle;
-        ctx.lineWidth = router.vertex.highlighted ? 3 : 1;
-        ctx.stroke();
-        ctx.fill();
+        if (router.vertex.highlighted || router.vertex.selected){
+            ctx.arc(router.getX(wx), router.getY(wy), router.vertex.radius, 0, Math.PI * 2, true);
+            ctx.lineWidth = router.vertex.highlighted ? 3 : 1;
+            ctx.strokeStyle = router.vertex.highlighted ? router.vertex.highStroke : router.vertex.strokeStyle;
+            ctx.stroke();
+        }
+        ctx.drawImage(routerIcon, router.getX(wx) - router.vertex.radius, router.getY(wy) - 1.45 * router.vertex.radius, 2 * router.vertex.radius, 2 * router.vertex.radius);
         ctx.fillStyle = '#ffffff';
         ctx.textAlign="center";
         ctx.fillText(`${router.id}`, router.getX(wx), router.getY(wy));
@@ -58,7 +62,7 @@
         for (let i = 0; i < links.length; i++) {
             let fromNode = links[i].routers[0];
             let toNode = links[i].routers[1];
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.strokeStyle = fromNode.vertex.strokeStyle;
             ctx.moveTo(fromNode.getX(wx), fromNode.getY(wy));
@@ -76,8 +80,6 @@
         if (!links.find((e) => (e.routers.includes(from) && e.routers.includes(to)))) 
             links = [...links, link];
         fromNode!.vertex.highlighted = false;
-        // fromNode?.discover(links);
-        // toNode?.discover(links);
         fromNode = null;
         toNode = null;
         draw();
@@ -86,8 +88,6 @@
         let link = links.find(e => e.routers.includes(from) && e.routers.includes(to))
         link!.cost = cost;
         fromNode!.vertex.highlighted = false;
-        // fromNode?.discover(links);
-        // toNode?.discover(links);
         fromNode = null;
         toNode = null;
         editEdge = false;
@@ -95,7 +95,7 @@
     }
     const fforward = () => {
         reset();
-        forward(); //Discovery step;
+        forward(); //discovery step;
         routers.forEach(x => {
             for (let i = 0; i < routers.length - 1; i++){
                 links.forEach(l => {
@@ -187,7 +187,7 @@
     onMount(() => {
         ctx = canvas.getContext("2d")!;
         resize();
-        Object.values(data).forEach(example => {
+        data.examples.forEach(example => {
             let [networkName, [routerJSON, linkJSON, nf]] = example;
             loadNetwork(routerJSON, linkJSON, nf, networkName);
         });
@@ -199,6 +199,41 @@
 </script>
 
 <input style="display:none" type="file" accept=".json" bind:files bind:this={input}/>
+
+<img 
+    style="display:none" 
+    alt="router" 
+    src="router.svg"
+    bind:this={routerIcon}/>
+
+{#if modalDV}
+<dialog open>
+    <article>
+        <header>
+            <a class="close" href={'#'} on:click={() => {modalDV = false; selection = null}}> </a>
+            Distance Vector of Router {modalRouter.id}
+        </header>
+        <table role="grid">
+            <thead>
+                <tr>
+                    <th>dest</th>
+                    <th>next</th>
+                    <th>cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#each modalRouter.distVec as v, i}
+                    <tr>
+                        <td>{v?.dest.id ?? i}</td>
+                        <td>{v?.next.id ?? "–"}</td>
+                        <td>{v?.cost ?? "∞"}</td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    </article>
+</dialog>
+{/if}
 
 {#if saving}
 <dialog open>
@@ -253,20 +288,26 @@
 {/if}
 
 {#if inspect}
-<table style="top: {inspect.getY(wy)}px; left: {inspect.getX(wx)}px">
-    <tr>
-        <td>dest</td>
-        <td>next</td>
-        <td>cost</td>
-    </tr>
-    {#each inspect.distVec as v, i}
-        <tr>
-            <td>{v?.dest.id ?? i}</td>
-            <td>{v?.next.id ?? "–"}</td>
-            <td>{v?.cost ?? "∞"}</td>
-        </tr>
-    {/each}
-</table>
+<main>
+    <table style="top: {inspect.getY(wy)}px; left: {inspect.getX(wx)}px">
+        <thead>
+            <tr>
+                <th>dest</th>
+                <th>next</th>
+                <th>cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each inspect.distVec as v, i}
+                <tr>
+                    <td>{v?.dest.id ?? i}</td>
+                    <td>{v?.next.id ?? "–"}</td>
+                    <td>{v?.cost ?? "∞"}</td>
+                </tr>
+            {/each}
+        </tbody>
+    </table>
+</main>
 {/if}
 
 <svelte:window on:resize={resize}/>
@@ -287,8 +328,14 @@
         if (target) {
             switch(e.button){
                 case 0:
-                    selection = target;
-                    selection.vertex.selected = true;
+                    if (selection == target){
+                        modalDV = true;
+                        modalRouter = selection;
+                    }
+                    else {
+                        selection = target;
+                        selection.vertex.selected = true;
+                    }
                     break;
                 case 1:
                     if (e.button == 1 && !fromNode) {
@@ -421,7 +468,8 @@
     article {
         padding-bottom: 1rem;
     }
-    table {
+    main > table {
+        background: #00000011;
         position: absolute;
         width: fit-content;
         border: solid 2px;

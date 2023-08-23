@@ -68,7 +68,7 @@ export class Vertex {
     y: number;
     wx: number;
     wy: number;
-    radius = 10;
+    radius = 20;
     fillStyle = "#22cccc";
     strokeStyle = "#009999";
     selectedFill = "#88aaaa";
