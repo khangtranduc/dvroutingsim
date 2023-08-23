@@ -66,6 +66,8 @@ export class DistanceElement {
 export class Vertex {
     x: number;
     y: number;
+    wx: number;
+    wy: number;
     radius = 10;
     fillStyle = "#22cccc";
     strokeStyle = "#009999";
@@ -74,9 +76,11 @@ export class Vertex {
     selected = false;
     highlighted = false;
 
-    constructor(x: number, y: number){
+    constructor(x: number, y: number, wx: number, wy: number){
         this.x = x;
         this.y = y;
+        this.wx = wx;
+        this.wy = wy;
     }
 }
 
@@ -87,12 +91,24 @@ export class Router {
     dvQ: DistanceElement[][] = [];
     C: DistanceElement[] = [];
 
-    constructor(id: number, x:number, y:number){
+    constructor(id: number, x:number, y:number, wx: number, wy:number){
         this.id = id;
         this.distVec[id] = new DistanceElement(this, this, 0);
         this.C[id] = this.distVec[id];
         this.dvQ[id] = this.distVec;
-        this.vertex = new Vertex(x, y);
+        this.vertex = new Vertex(x, y, wx, wy);
+    }
+    getX(wx: number){
+        return this.vertex.x * wx/this.vertex.wx
+    }
+    getY(wy: number){
+        return this.vertex.y * wy/this.vertex.wy
+    }
+    setX(x: number, wx: number){
+        this.vertex.x = x * this.vertex.wx / wx;
+    }
+    setY(y: number, wy: number){
+        this.vertex.y = y * this.vertex.wy / wy;
     }
     reset() {
         this.distVec = [];

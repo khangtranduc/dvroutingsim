@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { DistanceElement, Link, Network, Router } from "$lib/classes";
-    import Layout from "./+layout.svelte";
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D;
     let routers: Router[] = [];
@@ -23,35 +22,38 @@
     let routerJSON: Router[]|null;
     let linkJSON: Link[]|null;
     let nf: number|null;
-    let select: HTMLSelectElement;
+    let wx: number;
+    let wy: number;
     export let data;
     const within = (x: number, y: number) => {
         return routers.find(n => {
-            return x > (n.vertex.x - n.vertex.radius) &&
-                y > (n.vertex.y - n.vertex.radius) &&
-                x < (n.vertex.x + n.vertex.radius) &&
-                y < (n.vertex.y + n.vertex.radius);
+            return x > (n.getX(wx) - n.vertex.radius) &&
+                y > (n.getY(wy) - n.vertex.radius) &&
+                x < (n.getX(wx) + n.vertex.radius) &&
+                y < (n.getY(wy) + n.vertex.radius);
         })
     }
     const resize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        wx = window.innerWidth;
+        wy = window.innerHeight;
         draw();
     }
     const drawNode = (router: Router) => {
         ctx.beginPath();
         ctx.fillStyle = router.vertex.selected ? router.vertex.selectedFill : router.vertex.fillStyle;
-        ctx.arc(router.vertex.x, router.vertex.y, router.vertex.radius, 0, Math.PI * 2, true);
+        ctx.arc(router.getX(wx), router.getY(wy), router.vertex.radius, 0, Math.PI * 2, true);
         ctx.strokeStyle = router.vertex.highlighted ? router.vertex.highStroke : router.vertex.strokeStyle;
         ctx.lineWidth = router.vertex.highlighted ? 3 : 1;
         ctx.stroke();
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.textAlign="center";
-        ctx.fillText(`${router.id}`, router.vertex.x, router.vertex.y);
+        ctx.fillText(`${router.id}`, router.getX(wx), router.getY(wy));
     }
     const draw = () => {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        ctx.clearRect(0, 0, wx, wy);
         //Draw Edges
         for (let i = 0; i < links.length; i++) {
             let fromNode = links[i].routers[0];
@@ -59,15 +61,15 @@
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.strokeStyle = fromNode.vertex.strokeStyle;
-            ctx.moveTo(fromNode.vertex.x, fromNode.vertex.y);
-            ctx.lineTo(toNode.vertex.x, toNode.vertex.y);
+            ctx.moveTo(fromNode.getX(wx), fromNode.getY(wy));
+            ctx.lineTo(toNode.getX(wx), toNode.getY(wy));
             ctx.stroke();
             ctx.fillStyle = '#000000'
-            ctx.fillText(links[i].cost.toString(), (toNode.vertex.x + fromNode.vertex.x)/2, (toNode.vertex.y + fromNode.vertex.y)/2)
+            ctx.fillText(links[i].cost.toString(), (toNode.getX(wx) + fromNode.getX(wx))/2, (toNode.getY(wy) + fromNode.getY(wy))/2)
+        }
         //Draw Nodes
         for (let i = 0; i < routers.length; i++)
             drawNode(routers[i]);
-        }
     }
     const addEdge = (from: Router, to: Router, cost: number) => {
         let link = new Link(from, to, cost);
@@ -160,7 +162,7 @@
     const loadNetwork = (routerJSON: Router[]|null, linkJSON: Link[]|null, nForward: number, networkName: string) => {
         clear();
         routerJSON!.forEach(x => {
-            routers = [...routers, new Router(x.id, x.vertex.x, x.vertex.y)]
+            routers = [...routers, new Router(x.id, x.vertex.x, x.vertex.y, x.vertex.wx, x.vertex.wy)]
         })
         linkJSON!.forEach(x => {
             links = [...links, new Link(routers[x.routers[0].id], routers[x.routers[1].id], x.cost)]
@@ -251,7 +253,7 @@
 {/if}
 
 {#if inspect}
-<table style="top: {inspect.vertex.y}px; left: {inspect.vertex.x}px">
+<table style="top: {inspect.getY(wy)}px; left: {inspect.getX(wx)}px">
     <tr>
         <td>dest</td>
         <td>next</td>
@@ -327,8 +329,8 @@
     on:mousemove={(e) => {
         inspect = null;
         if (selection && e.buttons){
-            selection.vertex.x = e.x;
-            selection.vertex.y = e.y;
+            selection.setX(e.x, wx);
+            selection.setY(e.y, wy);
             draw();
         }
     }}
@@ -336,7 +338,7 @@
         switch(e.button){
             case 0:
                 if (!selection) {
-                    let router = new Router(routers.length, e.x, e.y)
+                    let router = new Router(routers.length, e.x, e.y, wx, wy)
                     routers = [...routers, router];
                 }
                 break;
@@ -349,7 +351,7 @@
 />
 
 <div>
-    <select bind:value={selectedNetwork} bind:this={select}>
+    <select bind:value={selectedNetwork}>
         {#each savedNetworks as network}
             <option value={network}>
                 {network.name}
