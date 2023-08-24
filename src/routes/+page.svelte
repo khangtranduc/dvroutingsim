@@ -86,7 +86,12 @@
     }
     const changeEdge = (from: Router, to: Router, cost: number) => {
         let link = links.find(e => e.routers.includes(from) && e.routers.includes(to))
-        link!.cost = cost;
+        if (cost == 0 && link) {
+            links.splice(links.indexOf(link),1)
+        }
+        else {
+            link!.cost = cost;
+        }
         fromNode!.vertex.highlighted = false;
         fromNode = null;
         toNode = null;
@@ -271,10 +276,10 @@
             <input type="number" placeholder="Enter edge cost" bind:value={edgeCost} required/>
         </label>
         <button on:click={() => {
-            if (edgeCost 
+            if (edgeCost !== null 
                 && fromNode
                 && toNode) {
-                    if (edgeCost < 0) edgeCost = 1;
+                    if (edgeCost < 0) edgeCost = 0;
                     if (editEdge) changeEdge(fromNode, toNode, edgeCost)
                     else addEdge(fromNode, toNode, edgeCost)
                 }
@@ -310,7 +315,21 @@
 </main>
 {/if}
 
-<svelte:window on:resize={resize}/>
+<svelte:window on:resize={resize} 
+        on:keydown={(e) => {
+            if (e.key == "Delete" && selection) {
+                routers.splice(selection.id, 1);
+                for (let i = selection.id; i < routers.length; i++)
+                    routers[i].id = i
+                links.forEach((x, i) => {
+                    if (selection && x.routers.includes(selection)) delete links[i]
+                })
+                links = links.filter(e => e !== null)
+                selection = null;
+                draw();
+            }
+        }}
+/>
 
 <canvas bind:this={canvas}
     on:contextmenu={(e) => {
