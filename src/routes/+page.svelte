@@ -234,7 +234,7 @@
                             Single Left Click
                         </fig>
                     </td>
-                    <td>Create router</td>
+                    <td>Create/Select a router</td>
                 </tr>
                 <tr>
                     <td>
@@ -270,7 +270,13 @@
                             Middle Click
                         </fig>
                     </td>
-                    <td>Middle click two routers to create/edit a link</td>
+                    <td>Middle click a router to highlight it, middle click another router to connect it to the highlighted router</td>
+                </tr>
+                <tr>
+                    <td>
+                        <kbd>Delete</kbd>
+                    </td>
+                    <td>Delete selected router</td>
                 </tr>
             </tbody>
         </table>
@@ -577,6 +583,7 @@
     }
     fig {
         display: flex;
+        width: max-content;
         align-items: center;
         gap: .3rem;
     }
