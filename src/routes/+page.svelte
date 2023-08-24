@@ -27,6 +27,7 @@
     let wy: number;
     let modalDV = false;
     let modalRouter: Router;
+    let help = false;
     export let data;
     const within = (x: number, y: number) => {
         return routers.find(n => {
@@ -210,6 +211,72 @@
     alt="router" 
     src="router.svg"
     bind:this={routerIcon}/>
+
+{#if help}
+<dialog open>
+    <article>
+        <header>
+            <a class="close" href={'#'} on:click={() => {help = false}}> </a>
+            Controls
+        </header>
+        <table>
+            <thead>
+                <tr>
+                    <th>Control</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <fig>
+                            <iconify-icon width="32" icon="iconoir:mouse-button-left"/>
+                            Single Left Click
+                        </fig>
+                    </td>
+                    <td>Create router</td>
+                </tr>
+                <tr>
+                    <td>
+                        <fig>
+                            <iconify-icon width="32" icon="iconoir:mouse-button-left"/> 
+                            Left Click and Drag
+                        </fig>
+                    </td>
+                    <td>Move router around</td>
+                </tr>
+                <tr>
+                    <td>
+                        <fig>
+                            <iconify-icon width="32" icon="iconoir:mouse-button-left"/>
+                            Double Left Click
+                        </fig>
+                    </td>
+                    <td>Open distance vector table in modal</td>
+                </tr>
+                <tr>
+                    <td>
+                        <fig>
+                            <iconify-icon width="32" icon="iconoir:mouse-button-right"/>
+                            Right Click
+                        </fig>
+                    </td>
+                    <td>Inspect distance vector table</td>
+                </tr>
+                <tr>
+                    <td>
+                        <fig>
+                            <iconify-icon width="32" icon="solar:mouse-minimalistic-outline"/>
+                            Middle Click
+                        </fig>
+                    </td>
+                    <td>Middle click two routers to create/edit a link</td>
+                </tr>
+            </tbody>
+        </table>
+    </article>
+</dialog>
+{/if}
 
 {#if modalDV}
 <dialog open>
@@ -424,6 +491,7 @@
             </option>
         {/each}
     </select>
+    <iconify-icon on:click={() => help = true} width="36" icon="lucide:help-circle"/>
 </div>
 
 <buttongroup>
@@ -461,9 +529,22 @@
 <style lang="scss">
     div {
         position: absolute;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
         top: .1rem;
         right: .3rem;
         left: .3rem;
+        select {
+            margin: 0;
+        }
+        iconify-icon {
+            transition: .3s;
+            &:hover {
+                transform: scale(1.1);
+                transition: .3s;
+            }
+        }
     }
     buttongroup {
         display: flex;
@@ -493,5 +574,10 @@
         width: fit-content;
         border: solid 2px;
         margin: 0;
+    }
+    fig {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
     }
 </style>
