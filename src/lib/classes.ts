@@ -119,8 +119,6 @@ export class Router {
     }
     discover(links: Link[]) {
         Router.neighbours(this, links).forEach((x) => {
-            // console.log(`${x} ${this.C[x.dest.id]}`);
-            // console.log(!x.compare(this.C[x.dest.id]));
             let flag = false;
             if (!x.compare(this.C[x.dest.id])) flag = true;
             this.C[x.dest.id] = x;
@@ -131,22 +129,13 @@ export class Router {
         })
     }
     send(links: Link[]){
-        // this.discover(links);
         Router.neighbours(this, links).forEach((x) => {
-            // let flag = false;
-            // if (Router.distVecDiff(x.dest.dvQ[this.id], this.distVec)){
-            //     x.dest.discover(links);
-            //     flag = true;
-            // }
             x.dest.discover(links);
             x.dest.dvQ[this.id] = [];
             for (let i = 0; i < this.distVec.length; i++)
                 if (this.distVec[i])
                     x.dest.dvQ[this.id][i] = this.distVec[i].clone();
             x.dest.recalc(this.id);
-            // if (flag) {
-            //     x.dest.recalc(this.id);
-            // }
         });
     }
     pojo() {
@@ -157,8 +146,6 @@ export class Router {
     }
     recalc(from: number){
         let N = Math.max(this.C.length, this.distVec.length, this.dvQ[from].length)
-        // console.log(`${this.id} ${from} ${N}`);
-        // console.log(this.dvQ);
         for (let i = 0; i < N; i++)
             this.distVec[i] = Router.min(this.distVec[i], this.C[from], this.dvQ[from][i])
     }
@@ -170,14 +157,6 @@ export class Router {
         let alt = new DistanceElement(Dvy.dest, Cxv.dest, Cxv.cost + Dvy.cost);
         if (!Dxy || Dxy.next == Cxv.dest) return alt;
         return alt.cost < Dxy.cost ? alt : Dxy;
-    }
-    static distVecDiff(dv1: DistanceElement[], dv2: DistanceElement[]): boolean {
-        if (!dv1 || !dv2) return true;
-        if (dv1.length != dv2.length) return true;
-        for (let i = 0; i < dv1.length; i++){
-            if (dv1[i] && dv2[i] && !dv1[i].compare(dv2[i])) return true;
-        }
-        return false;
     }
     static neighbours(s: Router, links: Link[]): DistanceElement[] {
         return links
