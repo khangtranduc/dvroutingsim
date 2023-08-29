@@ -135,6 +135,7 @@
     const forward = () => {
         // console.log("sending...");
         routers.forEach((x) => x.send(links));
+        routers.forEach((x) => x.process(links));
         if (nForward == -1) nForward = 1;
         else nForward += 1;
         // routers.forEach((x) => console.log(x.distVec));

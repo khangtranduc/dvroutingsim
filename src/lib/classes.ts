@@ -135,8 +135,13 @@ export class Router {
             for (let i = 0; i < this.distVec.length; i++)
                 if (this.distVec[i])
                     x.dest.dvQ[this.id][i] = this.distVec[i].clone();
-            x.dest.recalc(this.id);
+            // x.dest.recalc(this.id);
         });
+    }
+    process(links: Link[]) {
+        Router.neighbours(this, links).forEach(x => {
+            x.dest.recalc(this.id);
+        })
     }
     pojo() {
         return {
