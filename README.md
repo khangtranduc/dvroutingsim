@@ -11,12 +11,12 @@
 - **Delete Key:** Delete selected router
 Click the question mark icon on the top right corner for a quick reference of the mouse controls.
 ## Router States
-![[Pasted image 20230824150814.png|center]]
+![](static/states.png)
 A **selected** router, will be indicated by a blue circle
 A **highlighted** router, will be indicated by a thick red circle
 ## Toolbar
 At the bottom of the page there a toolbar provides conveniences as well as allow control over the simulation.
-![[Pasted image 20230824150939.png]]
+![](static/tool.png)
 The buttons are:
 - **Upload:** Uploads a JSON file representing a network
 	- JSON file must be obtained from the app itself
@@ -109,12 +109,12 @@ else
 ## Sample Networks
 ### Count to Infinity
 Following this example set-up
-![[Pasted image 20230829172030.png|center]]
+![](static/cti-example.png)
 A sample network is given in the simulation called "Count to Infinity" which is converged at the point before the disastrous weight change that sets off the count to infinity.
-![[Pasted image 20230829172204.png|center]]
+![](static/cti.png)
 ### The Fish
 Its just a large network that would necessitate the use of the double-click distance vector table inspection.
-![[the-fish.png]]
+![](static/the-fish.png)
 ## Responsive Design
 Each graph is scaled relative to the original window size with which it is constructed. This prevents networks constructed on larger windows appearing to have been cut off on smaller windows, and prevents networks constructed on smaller windows appearing to have been bunched up to one side on larger windows.
 ## Setup Guide
