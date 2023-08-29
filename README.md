@@ -112,9 +112,15 @@ else
 ## Sample Networks
 ### Count to Infinity
 Following this example set-up
-![](static/cti-example.png)
+<p align="center">
+	<img src="/static/cti-example.png"/>
+</p>
+
 A sample network is given in the simulation called "Count to Infinity" which is converged at the point before the disastrous weight change that sets off the count to infinity.
-![](static/cti.png)
+<p align="center">
+	<img src="/static/cti.png"/>
+</p>
+
 ### The Fish
 Its just a large network that would necessitate the use of the double-click distance vector table inspection.
 ![](static/the-fish.png)
