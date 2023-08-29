@@ -161,10 +161,12 @@
         routers = [];
         links = [];
         selectedNetwork = savedNetworks[0];
+        nForward = 0;
         draw();
     }
     const reset = () => {
         routers.forEach((x) => x.reset());
+        nForward = 0;
     }
     const loadNetwork = (routerJSON: Router[]|null, linkJSON: Link[]|null, nForward: number, networkName: string) => {
         clear();
