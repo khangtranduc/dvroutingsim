@@ -11,9 +11,9 @@
 - **Delete Key:** Delete selected router
 Click the question mark icon on the top right corner for a quick reference of the mouse controls.
 ## Router States
-<center>
+<p>
 	![](static/states.png)
-</center>
+</p>
 A **selected** router, will be indicated by a blue circle
 A **highlighted** router, will be indicated by a thick red circle
 ## Toolbar
