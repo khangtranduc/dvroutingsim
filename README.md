@@ -14,6 +14,7 @@ Click the question mark icon on the top right corner for a quick reference of th
 <p align="center">
 	<img src="/static/states.png"/>
 </p>
+
 A **selected** router, will be indicated by a blue circle
 A **highlighted** router, will be indicated by a thick red circle
 ## Toolbar
