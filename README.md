@@ -52,6 +52,9 @@ class Router {
     discover(links: Link[]) {
 	    //find out distances to neighbours
     }
+    process(links: Link[]) {
+	    //asks neighbours to process request
+    }
     recalc(from: number) {
 	    //recalculate distance vector with information from "from" <-- this is an optimization
 	    //computes the Bellman-Ford equation
@@ -64,10 +67,11 @@ class Link {
 	cost: number;
 }
 ```
-The forward button calls the send method on each Router object.
+The forward button calls the send and process method on each Router object.
 ```typescript
 const forward = () => {
 	routers.forEach((x) => x.send());
+	routers.forEach((x) => x.process());
 }
 ```
 The `send(links: Link[])` method is as follows (pseudo-code and simplified)
@@ -83,6 +87,10 @@ class Router {
 		this.neighbours.forEach(x => {
 			x.discover();
 			x.dvQ[this.id] = this.distVec.clone()
+		})
+	}
+	process() {
+		this.neighbours.forEach(x => {
 			x.recalc(this.id);
 		})
 	}
