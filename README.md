@@ -1,6 +1,6 @@
 # dvroutingsim: A Distance Vector Routing Simulation
 [dvroutingsim](http://dvroutingsim.surge.sh) is an easy to use [Distance Vector Routing](https://en.wikipedia.org/wiki/Distance-vector_routing_protocol?useskin=vector) simulation that runs in your browser!
-![[the-fish.png]]
+![](static/the-fish.png)
 ## Basic Controls
 - **Single Left Click:** Create/Select a router
 - **Left Click and Drag:** Move router around
